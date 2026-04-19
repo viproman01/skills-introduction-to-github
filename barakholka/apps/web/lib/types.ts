@@ -14,6 +14,10 @@ export type ShopGeo = {
   lon: number;
   lat: number;
   photo: string | null;
+  is_verified: boolean;
+  zone_slug: string | null;
+  zone_name: string | null;
+  sector_code: string | null;
 };
 
 export type ProductCardData = {
