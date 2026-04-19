@@ -7,7 +7,7 @@ import type { ShopGeo } from '@/lib/types';
 const STYLE_URL =
   process.env.NEXT_PUBLIC_MAPLIBRE_STYLE ?? 'https://tiles.openfreemap.org/styles/liberty';
 
-const CENTER: [number, number] = [76.9286, 43.3306];
+const CENTER: [number, number] = [76.9145, 43.3450];
 
 export function MapView({ shops }: { shops: ShopGeo[] }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -20,7 +20,7 @@ export function MapView({ shops }: { shops: ShopGeo[] }) {
       container: containerRef.current,
       style: STYLE_URL,
       center: CENTER,
-      zoom: 14,
+      zoom: 16,
       attributionControl: { compact: true },
     });
     mapRef.current = map;

@@ -1,47 +1,65 @@
 {
   "type": "FeatureCollection",
+  "_meta": {
+    "note": "Approximate polygons hand-drawn near the Almaty Barakholka cluster along Northern Ring road. Names match real pavilions but footprints are not surveyed — replace with OSM/satellite traces when available.",
+    "center_hint": [76.9135, 43.3450]
+  },
   "features": [
     {
       "type": "Feature",
-      "properties": { "name": "Адем", "slug": "adem" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [76.9240, 43.3290],
-          [76.9280, 43.3290],
-          [76.9280, 43.3320],
-          [76.9240, 43.3320],
-          [76.9240, 43.3290]
-        ]]
-      }
+      "properties": { "name": "Олжа",       "slug": "olzha",     "floors": 2 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9098, 43.3463], [76.9112, 43.3463], [76.9112, 43.3473], [76.9098, 43.3473], [76.9098, 43.3463]
+      ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Алем", "slug": "alem" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [76.9285, 43.3290],
-          [76.9325, 43.3290],
-          [76.9325, 43.3320],
-          [76.9285, 43.3320],
-          [76.9285, 43.3290]
-        ]]
-      }
+      "properties": { "name": "Адем",       "slug": "adem",      "floors": 3 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9118, 43.3460], [76.9142, 43.3460], [76.9142, 43.3475], [76.9118, 43.3475], [76.9118, 43.3460]
+      ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Кулагер", "slug": "kulager" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [76.9260, 43.3322],
-          [76.9310, 43.3322],
-          [76.9310, 43.3345],
-          [76.9260, 43.3345],
-          [76.9260, 43.3322]
-        ]]
-      }
+      "properties": { "name": "Алмалы",     "slug": "almaly",    "floors": 2 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9148, 43.3463], [76.9166, 43.3463], [76.9166, 43.3475], [76.9148, 43.3475], [76.9148, 43.3463]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Меркур",     "slug": "merkur",    "floors": 2 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9172, 43.3463], [76.9192, 43.3463], [76.9192, 43.3473], [76.9172, 43.3473], [76.9172, 43.3463]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Куланды",    "slug": "kulanda",   "floors": 1 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9098, 43.3430], [76.9118, 43.3430], [76.9118, 43.3442], [76.9098, 43.3442], [76.9098, 43.3430]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Болашак",    "slug": "bolashak",  "floors": 2 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9124, 43.3428], [76.9148, 43.3428], [76.9148, 43.3445], [76.9124, 43.3445], [76.9124, 43.3428]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Айна-Сулу",  "slug": "aina-sulu", "floors": 2 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9154, 43.3430], [76.9174, 43.3430], [76.9174, 43.3443], [76.9154, 43.3443], [76.9154, 43.3430]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Берекет",    "slug": "bereket",   "floors": 1 },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9180, 43.3432], [76.9198, 43.3432], [76.9198, 43.3443], [76.9180, 43.3443], [76.9180, 43.3432]
+      ]] }
     }
   ]
 }

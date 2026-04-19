@@ -31,9 +31,14 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
 type Zone = { slug: string; name: string; center: [number, number]; radiusDeg: number };
 
 const ZONES: Zone[] = [
-  { slug: 'adem',    name: 'Адем',    center: [76.9260, 43.3305], radiusDeg: 0.0015 },
-  { slug: 'alem',    name: 'Алем',    center: [76.9305, 43.3305], radiusDeg: 0.0015 },
-  { slug: 'kulager', name: 'Кулагер', center: [76.9285, 43.3333], radiusDeg: 0.0011 },
+  { slug: 'olzha',     name: 'Олжа',      center: [76.9105, 43.3468], radiusDeg: 0.0007 },
+  { slug: 'adem',      name: 'Адем',      center: [76.9130, 43.3467], radiusDeg: 0.0011 },
+  { slug: 'almaly',    name: 'Алмалы',    center: [76.9157, 43.3469], radiusDeg: 0.0008 },
+  { slug: 'merkur',    name: 'Меркур',    center: [76.9182, 43.3468], radiusDeg: 0.0009 },
+  { slug: 'kulanda',   name: 'Куланды',   center: [76.9108, 43.3436], radiusDeg: 0.0009 },
+  { slug: 'bolashak',  name: 'Болашак',   center: [76.9136, 43.3436], radiusDeg: 0.0011 },
+  { slug: 'aina-sulu', name: 'Айна-Сулу', center: [76.9164, 43.3436], radiusDeg: 0.0009 },
+  { slug: 'bereket',   name: 'Берекет',   center: [76.9189, 43.3437], radiusDeg: 0.0008 },
 ];
 
 const CATEGORIES = [
@@ -80,7 +85,7 @@ async function main() {
   const { data: marketUpsert, error: marketErr } = await supabase
     .from('market')
     .upsert(
-      { name: 'Барахолка Алматы', city: 'Алматы', center_geo: 'SRID=4326;POINT(76.9286 43.3306)' as unknown as string },
+      { name: 'Барахолка Алматы', city: 'Алматы', center_geo: 'SRID=4326;POINT(76.9145 43.3450)' as unknown as string },
       { onConflict: 'name' },
     )
     .select('id')
