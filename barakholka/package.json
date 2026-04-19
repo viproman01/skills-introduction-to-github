@@ -1,0 +1,24 @@
+{
+  "name": "barakholka",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:types": "supabase gen types typescript --local > packages/db/src/types.generated.ts",
+    "db:reset": "supabase db reset",
+    "seed": "tsx packages/db/src/seed.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

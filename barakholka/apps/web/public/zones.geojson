@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Адем", "slug": "adem" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.9240, 43.3290],
+          [76.9280, 43.3290],
+          [76.9280, 43.3320],
+          [76.9240, 43.3320],
+          [76.9240, 43.3290]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Алем", "slug": "alem" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.9285, 43.3290],
+          [76.9325, 43.3290],
+          [76.9325, 43.3320],
+          [76.9285, 43.3320],
+          [76.9285, 43.3290]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Кулагер", "slug": "kulager" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.9260, 43.3322],
+          [76.9310, 43.3322],
+          [76.9310, 43.3345],
+          [76.9260, 43.3345],
+          [76.9260, 43.3322]
+        ]]
+      }
+    }
+  ]
+}
