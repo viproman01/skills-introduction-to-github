@@ -10,6 +10,7 @@ import {
   SearchIcon,
   UserIcon,
 } from '@/components/icons';
+import { getSellerSession } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'Барахолка — маркетплейс базара Алматы',
@@ -26,12 +27,13 @@ const categories = [
   { href: '/search?q=опт', label: 'Опт', emoji: '📦' },
 ] as const;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSellerSession();
+
   return (
     <html lang="ru">
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
-          {/* Row 1: logo · catalog · search · user nav */}
           <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
             <Link href="/" className="flex shrink-0 items-baseline text-2xl font-extrabold tracking-tight">
               <span className="text-brand">Барахолка</span>
@@ -67,18 +69,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             <nav className="hidden shrink-0 items-center gap-1 md:flex">
               <Link
-                href="/sellers"
+                href="/seller"
                 className="mr-1 rounded-lg border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-soft"
               >
-                Продавцам
+                {session ? 'Мой кабинет' : 'Продавцам'}
               </Link>
-              <IconLink href="/login" icon={<UserIcon />} label="Войти" />
+              {session ? (
+                <IconLink href="/seller" icon={<UserIcon />} label={shortName(session.fullName)} />
+              ) : (
+                <IconLink href="/login" icon={<UserIcon />} label="Войти" />
+              )}
               <IconLink href="/favorites" icon={<HeartIcon />} label="Избранное" />
               <IconLink href="/cart" icon={<CartIcon />} label="Корзина" />
             </nav>
           </div>
 
-          {/* Row 2: category chips · city */}
           <div className="border-t border-neutral-100">
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2">
               <div className="chip-strip flex flex-1 items-center gap-1 overflow-x-auto text-sm">
@@ -128,7 +133,12 @@ function IconLink({ href, icon, label }: { href: string; icon: React.ReactNode; 
       className="flex flex-col items-center gap-0.5 rounded-md px-3 py-1.5 text-xs text-neutral-700 hover:text-brand"
     >
       <span className="h-5 w-5">{icon}</span>
-      <span>{label}</span>
+      <span className="max-w-16 truncate">{label}</span>
     </Link>
   );
+}
+
+function shortName(fullName: string): string {
+  const first = fullName.split(/\s+/)[0] ?? fullName;
+  return first.length > 10 ? first.slice(0, 9) + '…' : first;
 }
