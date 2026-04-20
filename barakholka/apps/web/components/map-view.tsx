@@ -123,10 +123,15 @@ export function MapView({
         const res = await fetch('/zones.geojson');
         const zonesGeoJSON = (await res.json()) as GeoJSON.FeatureCollection;
         zonesRef.current = (zonesGeoJSON.features as GeoJSON.Feature<GeoJSON.Polygon>[]).map((f) => {
-          const coords = f.geometry.coordinates[0];
+          const ring = f.geometry.coordinates[0] ?? [];
           let lon = 0, lat = 0;
-          for (const [x, y] of coords.slice(0, -1)) { lon += x; lat += y; }
-          const n = coords.length - 1;
+          for (const pair of ring.slice(0, -1)) {
+            if (!pair) continue;
+            const x = pair[0] ?? 0;
+            const y = pair[1] ?? 0;
+            lon += x; lat += y;
+          }
+          const n = Math.max(1, ring.length - 1);
           return {
             slug: String(f.properties?.slug ?? ''),
             name: String(f.properties?.name ?? ''),
