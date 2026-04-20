@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
 import {
-  BoxIcon,
   CartIcon,
   ChevronDownIcon,
   HeartIcon,
@@ -13,18 +12,18 @@ import {
 } from '@/components/icons';
 
 export const metadata: Metadata = {
-  title: 'Барахолка — маркетплейс Алматы',
-  description: 'Магазины и товары с Барахолки Алматы. Карта, поиск, связь с продавцом.',
+  title: 'Барахолка — маркетплейс базара Алматы',
+  description: 'Бутики и товары с Барахолки Алматы. Карта, план базара, поиск, связь с продавцом.',
 };
 
 const categories = [
-  { href: '/shops', label: 'Магазины', emoji: '🏬' },
+  { href: '/shops', label: 'Бутики', emoji: '🏬' },
+  { href: '/map', label: 'План базара', emoji: '📐' },
   { href: '/search?q=одежда', label: 'Одежда', emoji: '👕' },
   { href: '/search?q=обувь', label: 'Обувь', emoji: '👟' },
   { href: '/search?q=аксессуары', label: 'Аксессуары', emoji: '👜' },
   { href: '/search?q=детям', label: 'Детям', emoji: '🧸' },
   { href: '/search?q=опт', label: 'Опт', emoji: '📦' },
-  { href: '/map', label: 'На карте', emoji: '📍' },
 ] as const;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -67,8 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </form>
 
             <nav className="hidden shrink-0 items-center gap-1 md:flex">
+              <Link
+                href="/sellers"
+                className="mr-1 rounded-lg border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-soft"
+              >
+                Продавцам
+              </Link>
               <IconLink href="/login" icon={<UserIcon />} label="Войти" />
-              <IconLink href="/orders" icon={<BoxIcon />} label="Заказы" />
               <IconLink href="/favorites" icon={<HeartIcon />} label="Избранное" />
               <IconLink href="/cart" icon={<CartIcon />} label="Корзина" />
             </nav>

@@ -26,7 +26,18 @@ export type MapViewProps = {
   onShopClick: (id: string) => void;
   onShopHover: (id: string | null) => void;
   onReady?: () => void;
+  onUnsupported?: (reason: 'webgl' | 'init') => void;
 };
+
+function hasWebGL(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    return !!ctx;
+  } catch {
+    return false;
+  }
+}
 
 type Zone = { slug: string; name: string; centroid: [number, number] };
 
@@ -40,9 +51,12 @@ export function MapView({
   onShopClick,
   onShopHover,
   onReady,
+  onUnsupported,
 }: MapViewProps) {
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const onUnsupportedRef = useRef(onUnsupported);
+  onUnsupportedRef.current = onUnsupported;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const zonesRef = useRef<Zone[]>([]);
@@ -78,15 +92,30 @@ export function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: STYLE_URL,
-      center: DEFAULT_CENTER,
-      zoom: DEFAULT_ZOOM,
-      attributionControl: { compact: true },
-    });
+    if (!hasWebGL()) {
+      onUnsupportedRef.current?.('webgl');
+      return;
+    }
+
+    let map: MapLibreMap;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: STYLE_URL,
+        center: DEFAULT_CENTER,
+        zoom: DEFAULT_ZOOM,
+        attributionControl: { compact: true },
+      });
+    } catch (e) {
+      console.warn('[map] init failed:', e);
+      onUnsupportedRef.current?.('init');
+      return;
+    }
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.on('error', (ev) => {
+      console.warn('[map] runtime error:', ev?.error?.message ?? ev);
+    });
 
     map.on('load', async () => {
       // Zones
