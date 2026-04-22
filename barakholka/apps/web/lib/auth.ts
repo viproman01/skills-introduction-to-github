@@ -5,6 +5,9 @@ export type SellerSession = {
   userId: string;
   email: string | null;
   fullName: string;
+  /** True iff the signed-in user already has a `seller` row — i.e. registered
+   *  with role=seller or visited /seller at least once. Drives header UX. */
+  hasSellerRow: boolean;
 };
 
 /**
@@ -32,13 +35,14 @@ export async function requireSeller(nextPath = '/seller'): Promise<SellerSession
       id: user.id,
       full_name: fallback,
     });
-    return { userId: user.id, email: user.email ?? null, fullName: fallback };
+    return { userId: user.id, email: user.email ?? null, fullName: fallback, hasSellerRow: true };
   }
 
   return {
     userId: user.id,
     email: user.email ?? null,
     fullName: (existing as { full_name?: string }).full_name ?? 'Продавец',
+    hasSellerRow: true,
   };
 }
 
@@ -90,9 +94,11 @@ export async function getSellerSession(): Promise<SellerSession | null> {
     .select('full_name')
     .eq('id', user.id)
     .maybeSingle();
+  const row = s as { full_name?: string } | null;
   return {
     userId: user.id,
     email: user.email ?? null,
-    fullName: (s as { full_name?: string } | null)?.full_name ?? user.email?.split('@')[0] ?? 'Продавец',
+    fullName: row?.full_name ?? user.email?.split('@')[0] ?? 'Продавец',
+    hasSellerRow: row != null,
   };
 }

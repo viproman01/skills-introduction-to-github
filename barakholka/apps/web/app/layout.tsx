@@ -78,13 +78,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </Link>
               )}
               <Link
-                href="/seller"
+                href={session?.hasSellerRow ? '/seller' : '/signup?role=seller'}
                 className="mr-1 rounded-lg border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-soft"
               >
-                {session ? 'Мой кабинет' : 'Продавцам'}
+                {session?.hasSellerRow ? 'Мой кабинет' : 'Стать продавцом'}
               </Link>
               {session ? (
-                <IconLink href="/seller" icon={<UserIcon />} label={shortName(session.fullName)} />
+                <IconLink
+                  href={session.hasSellerRow ? '/seller' : '/favorites'}
+                  icon={<UserIcon />}
+                  label={shortName(session.fullName)}
+                />
               ) : (
                 <IconLink href="/login" icon={<UserIcon />} label="Войти" />
               )}

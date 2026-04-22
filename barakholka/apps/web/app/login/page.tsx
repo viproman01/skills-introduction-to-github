@@ -26,11 +26,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
 
   return (
     <div className="mx-auto max-w-md pt-10">
-      <h1 className="text-2xl font-semibold">Вход продавца</h1>
+      <h1 className="text-2xl font-semibold">Вход</h1>
       <p className="mt-1 text-sm text-neutral-600">
         Нет аккаунта?{' '}
         <Link href="/signup" className="font-medium text-brand hover:underline">
-          Регистрация
+          Зарегистрироваться
         </Link>
       </p>
 

@@ -34,27 +34,46 @@ type PavilionDef = {
   slug: string;
   name: string;
   specialty: string;
-  sectors: number;   // how many sectors per floor
+  sectors: number;
   floors: number;
-  capacity: number;  // total containers
-  center: [number, number];
-  radiusDeg: number;
+  capacity: number;
+  /** [minLon, minLat, maxLon, maxLat] — matches public/zones.geojson. */
+  bbox: [number, number, number, number];
 };
 
-// Source: field notes + Walking Almaty + Eurasianet + Global Informality.
-// Capacities are realistic approximations, not surveyed.
+// Capacities and bbox placements are research-based approximations, NOT a
+// surveyed GIS trace. Bboxes intentionally match public/zones.geojson so the
+// DB polygon and the static fallback agree. Sources: Walking Almaty,
+// Eurasianet, Global Informality, ademtc.kz.
 const PAVILIONS: PavilionDef[] = [
-  { slug: 'adem',      name: 'Адем',      specialty: 'Одежда и верх',     sectors: 6, floors: 3, capacity: 300, center: [76.9130, 43.3467], radiusDeg: 0.0011 },
-  { slug: 'alatau',    name: 'Алатау',    specialty: 'Ткани и швейное',   sectors: 5, floors: 3, capacity: 250, center: [76.9105, 43.3480], radiusDeg: 0.0010 },
-  { slug: 'yalyan',    name: 'Ялян',      specialty: 'Опт, Европа',       sectors: 8, floors: 2, capacity: 400, center: [76.9200, 43.3455], radiusDeg: 0.0013 },
-  { slug: 'olzha',     name: 'Олжа',      specialty: 'Обувь',             sectors: 4, floors: 2, capacity: 180, center: [76.9085, 43.3468], radiusDeg: 0.0008 },
-  { slug: 'bolashak',  name: 'Болашак',   specialty: 'Инструмент',        sectors: 4, floors: 2, capacity: 150, center: [76.9136, 43.3436], radiusDeg: 0.0009 },
-  { slug: 'almaly',    name: 'Алмалы',    specialty: 'Смешанные товары',  sectors: 5, floors: 2, capacity: 200, center: [76.9157, 43.3469], radiusDeg: 0.0009 },
-  { slug: 'merkur',    name: 'Меркур',    specialty: 'Текстиль, бельё',   sectors: 4, floors: 2, capacity: 140, center: [76.9182, 43.3468], radiusDeg: 0.0009 },
-  { slug: 'kulanda',   name: 'Куланды',   specialty: 'Хозтовары',         sectors: 3, floors: 1, capacity: 90,  center: [76.9108, 43.3436], radiusDeg: 0.0008 },
-  { slug: 'aina-sulu', name: 'Айна-Сулу', specialty: 'Свет и электрика', sectors: 3, floors: 1, capacity: 80,  center: [76.9164, 43.3436], radiusDeg: 0.0008 },
-  { slug: 'bereket',   name: 'Берекет',   specialty: 'Посуда и дом',      sectors: 3, floors: 1, capacity: 100, center: [76.9189, 43.3437], radiusDeg: 0.0008 },
+  { slug: 'alatau',    name: 'Алатау',    specialty: 'Ткани и швейное',   sectors: 5, floors: 3, capacity: 250, bbox: [76.9093, 43.3476, 76.9122, 43.3490] },
+  { slug: 'olzha',     name: 'Олжа',      specialty: 'Обувь',             sectors: 4, floors: 2, capacity: 180, bbox: [76.9075, 43.3461, 76.9096, 43.3473] },
+  { slug: 'adem',      name: 'Адем',      specialty: 'Одежда и верх',     sectors: 6, floors: 3, capacity: 300, bbox: [76.9125, 43.3458, 76.9156, 43.3478] },
+  { slug: 'almaly',    name: 'Алмалы',    specialty: 'Смешанные товары',  sectors: 5, floors: 2, capacity: 200, bbox: [76.9160, 43.3461, 76.9182, 43.3477] },
+  { slug: 'merkur',    name: 'Меркур',    specialty: 'Текстиль, бельё',   sectors: 4, floors: 2, capacity: 140, bbox: [76.9185, 43.3462, 76.9203, 43.3475] },
+  { slug: 'yalyan',    name: 'Ялян',      specialty: 'Опт, Европа',       sectors: 8, floors: 2, capacity: 400, bbox: [76.9208, 43.3447, 76.9244, 43.3470] },
+  { slug: 'kulanda',   name: 'Куланды',   specialty: 'Хозтовары',         sectors: 3, floors: 1, capacity: 90,  bbox: [76.9097, 43.3427, 76.9118, 43.3438] },
+  { slug: 'bolashak',  name: 'Болашак',   specialty: 'Инструмент',        sectors: 4, floors: 2, capacity: 150, bbox: [76.9124, 43.3424, 76.9152, 43.3440] },
+  { slug: 'aina-sulu', name: 'Айна-Сулу', specialty: 'Свет и электрика', sectors: 3, floors: 1, capacity: 80,  bbox: [76.9156, 43.3426, 76.9176, 43.3437] },
+  { slug: 'bereket',   name: 'Берекет',   specialty: 'Посуда и дом',      sectors: 3, floors: 1, capacity: 100, bbox: [76.9180, 43.3425, 76.9202, 43.3438] },
 ];
+
+function bboxToPolygon([minLon, minLat, maxLon, maxLat]: [number, number, number, number]) {
+  return {
+    type: 'Polygon' as const,
+    coordinates: [[
+      [minLon, minLat], [maxLon, minLat], [maxLon, maxLat], [minLon, maxLat], [minLon, minLat],
+    ]],
+  };
+}
+
+function bboxCenter([minLon, minLat, maxLon, maxLat]: [number, number, number, number]): [number, number] {
+  return [(minLon + maxLon) / 2, (minLat + maxLat) / 2];
+}
+
+function bboxRadiusDeg([minLon, , maxLon]: [number, number, number, number]): number {
+  return (maxLon - minLon) / 2;
+}
 
 const CATEGORIES = [
   { slug: 'clothing',       name_ru: 'Одежда',           parent: null },
@@ -98,19 +117,10 @@ async function main() {
   if (marketErr) throw marketErr;
   const marketId = (market as { id: string }).id;
 
-  console.log('→ zones (10 pavilions)');
+  console.log('→ zones (10 pavilions with capacity-proportional footprints)');
   const zoneIds: Record<string, string> = {};
   for (const p of PAVILIONS) {
-    const geojson = {
-      type: 'Polygon',
-      coordinates: [[
-        [p.center[0] - p.radiusDeg, p.center[1] - p.radiusDeg],
-        [p.center[0] + p.radiusDeg, p.center[1] - p.radiusDeg],
-        [p.center[0] + p.radiusDeg, p.center[1] + p.radiusDeg],
-        [p.center[0] - p.radiusDeg, p.center[1] + p.radiusDeg],
-        [p.center[0] - p.radiusDeg, p.center[1] - p.radiusDeg],
-      ]],
-    };
+    const geojson = bboxToPolygon(p.bbox);
     const { data, error } = await supabase
       .from('zone')
       .upsert(
@@ -195,8 +205,10 @@ async function main() {
   for (const p of PAVILIONS) {
     const shopsInPavilion = Math.min(6, Math.ceil(p.capacity / 50));
     shopIdsByPavilion[p.slug] = [];
+    const center = bboxCenter(p.bbox);
+    const radius = bboxRadiusDeg(p.bbox) * 0.75;
     for (let i = 0; i < shopsInPavilion; i++) {
-      const [lon, lat] = jitter(p.center, p.radiusDeg * 0.85);
+      const [lon, lat] = jitter(center, radius);
       const sectors = sectorIds[p.slug]!;
       const sectorId = sectors[(i + shopCount) % sectors.length]!;
       const nameIdx = (shopCount + p.slug.length) % SAMPLE_SHOP_NAMES.length;

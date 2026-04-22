@@ -4,10 +4,11 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Регистрация — Барахолка.kz' };
 
-type SearchParams = Promise<{ error?: string }>;
+type SearchParams = Promise<{ error?: string; role?: string }>;
 
 export default async function SignupPage({ searchParams }: { searchParams: SearchParams }) {
-  const { error } = await searchParams;
+  const { error, role: prefill } = await searchParams;
+  const defaultRole = prefill === 'seller' ? 'seller' : 'buyer';
 
   async function signUp(formData: FormData) {
     'use server';
@@ -15,23 +16,29 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
     const password = String(formData.get('password') ?? '');
     const fullName = String(formData.get('full_name') ?? '').trim();
     const phone = String(formData.get('phone') ?? '').trim();
+    const role = formData.get('role') === 'seller' ? 'seller' : 'buyer';
+
     if (!email || !password || !fullName) {
-      redirect('/signup?error=required');
+      redirect(`/signup?role=${role}&error=required`);
     }
 
     const supabase = await getSupabaseServer();
     const { data, error: authErr } = await supabase.auth.signUp({ email, password });
-    if (authErr) redirect(`/signup?error=${encodeURIComponent(authErr.message)}`);
+    if (authErr) redirect(`/signup?role=${role}&error=${encodeURIComponent(authErr.message)}`);
 
-    // User may need email confirmation. If session is already set, insert the
-    // seller row; otherwise the next login will create it via requireSeller().
     if (data.user && data.session) {
-      await supabase.from('seller').upsert({
-        id: data.user.id,
-        full_name: fullName,
-        phone: phone || null,
-      });
-      redirect('/seller');
+      if (role === 'seller') {
+        // Promote to seller: create the seller row now so RLS lets them open a shop.
+        await supabase.from('seller').upsert({
+          id: data.user.id,
+          full_name: fullName,
+          phone: phone || null,
+        });
+        redirect('/seller');
+      }
+      // Buyer: just keep the auth.users row. seller row gets created lazily
+      // by requireSeller() only if they later visit /seller.
+      redirect('/?welcome=1');
     }
 
     redirect('/login?error=' + encodeURIComponent('Проверьте email для подтверждения аккаунта.'));
@@ -39,7 +46,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
 
   return (
     <div className="mx-auto max-w-md pt-10">
-      <h1 className="text-2xl font-semibold">Регистрация продавца</h1>
+      <h1 className="text-2xl font-semibold">Регистрация</h1>
       <p className="mt-1 text-sm text-neutral-600">
         Уже есть аккаунт?{' '}
         <Link href="/login" className="font-medium text-brand hover:underline">
@@ -54,7 +61,25 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
       )}
 
       <form action={signUp} className="mt-5 flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm">
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium">Зачем регистрируетесь?</legend>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
+            <input type="radio" name="role" value="buyer" defaultChecked={defaultRole === 'buyer'} className="mt-1" />
+            <div>
+              <div className="text-sm font-semibold">Покупать 🛍️</div>
+              <div className="text-xs text-neutral-600">Искать товары, писать продавцам, ставить отзывы, сохранять избранное.</div>
+            </div>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
+            <input type="radio" name="role" value="seller" defaultChecked={defaultRole === 'seller'} className="mt-1" />
+            <div>
+              <div className="text-sm font-semibold">Продавать 🏬</div>
+              <div className="text-xs text-neutral-600">Открыть бутик на Барахолке, добавлять товары с фото, получать заявки.</div>
+            </div>
+          </label>
+        </fieldset>
+
+        <label className="mt-2 flex flex-col gap-1 text-sm">
           <span className="font-medium">Имя и фамилия</span>
           <input
             name="full_name"

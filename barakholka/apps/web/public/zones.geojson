@@ -1,64 +1,79 @@
 {
   "type": "FeatureCollection",
   "_meta": {
-    "note": "Approximate polygons hand-drawn near the Almaty Barakholka cluster along Northern Ring road. Names match real pavilions but footprints are not surveyed — replace with OSM/satellite traces when available.",
-    "center_hint": [76.9135, 43.3450]
+    "note": "Approximate footprints of the 10 main Almaty Barakholka pavilions along Северное кольцо. Shapes and positions are hand-placed: sizes scale with seat capacity, arrangement matches the real two-row street layout. NOT a surveyed GIS trace — replace with an OSM/JOSM export once external connectivity is available. Values in WGS84 (EPSG:4326).",
+    "center_hint": [76.9145, 43.3451],
+    "axis_hint": "Northern Ring road runs roughly east-west; pavilions sit on both sides"
   },
   "features": [
     {
       "type": "Feature",
-      "properties": { "name": "Олжа",       "slug": "olzha",     "floors": 2 },
+      "properties": { "slug": "alatau",    "name": "Алатау",    "capacity": 250, "side": "north", "specialty": "Ткани и швейное" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9098, 43.3463], [76.9112, 43.3463], [76.9112, 43.3473], [76.9098, 43.3473], [76.9098, 43.3463]
+        [76.9093, 43.3476], [76.9122, 43.3476], [76.9122, 43.3490], [76.9093, 43.3490], [76.9093, 43.3476]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Адем",       "slug": "adem",      "floors": 3 },
+      "properties": { "slug": "olzha",     "name": "Олжа",      "capacity": 180, "side": "north", "specialty": "Обувь" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9118, 43.3460], [76.9142, 43.3460], [76.9142, 43.3475], [76.9118, 43.3475], [76.9118, 43.3460]
+        [76.9075, 43.3461], [76.9096, 43.3461], [76.9096, 43.3473], [76.9075, 43.3473], [76.9075, 43.3461]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Алмалы",     "slug": "almaly",    "floors": 2 },
+      "properties": { "slug": "adem",      "name": "Адем",      "capacity": 300, "side": "north", "specialty": "Одежда и верх" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9148, 43.3463], [76.9166, 43.3463], [76.9166, 43.3475], [76.9148, 43.3475], [76.9148, 43.3463]
+        [76.9125, 43.3458], [76.9156, 43.3458], [76.9156, 43.3478], [76.9125, 43.3478], [76.9125, 43.3458]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Меркур",     "slug": "merkur",    "floors": 2 },
+      "properties": { "slug": "almaly",    "name": "Алмалы",    "capacity": 200, "side": "north", "specialty": "Смешанные товары" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9172, 43.3463], [76.9192, 43.3463], [76.9192, 43.3473], [76.9172, 43.3473], [76.9172, 43.3463]
+        [76.9160, 43.3461], [76.9182, 43.3461], [76.9182, 43.3477], [76.9160, 43.3477], [76.9160, 43.3461]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Куланды",    "slug": "kulanda",   "floors": 1 },
+      "properties": { "slug": "merkur",    "name": "Меркур",    "capacity": 140, "side": "north", "specialty": "Текстиль и бельё" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9098, 43.3430], [76.9118, 43.3430], [76.9118, 43.3442], [76.9098, 43.3442], [76.9098, 43.3430]
+        [76.9185, 43.3462], [76.9203, 43.3462], [76.9203, 43.3475], [76.9185, 43.3475], [76.9185, 43.3462]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Болашак",    "slug": "bolashak",  "floors": 2 },
+      "properties": { "slug": "yalyan",    "name": "Ялян",      "capacity": 400, "side": "east",  "specialty": "Опт, Европа" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9124, 43.3428], [76.9148, 43.3428], [76.9148, 43.3445], [76.9124, 43.3445], [76.9124, 43.3428]
+        [76.9208, 43.3447], [76.9244, 43.3447], [76.9244, 43.3470], [76.9208, 43.3470], [76.9208, 43.3447]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Айна-Сулу",  "slug": "aina-sulu", "floors": 2 },
+      "properties": { "slug": "kulanda",   "name": "Куланды",   "capacity": 90,  "side": "south", "specialty": "Хозтовары" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9154, 43.3430], [76.9174, 43.3430], [76.9174, 43.3443], [76.9154, 43.3443], [76.9154, 43.3430]
+        [76.9097, 43.3427], [76.9118, 43.3427], [76.9118, 43.3438], [76.9097, 43.3438], [76.9097, 43.3427]
       ]] }
     },
     {
       "type": "Feature",
-      "properties": { "name": "Берекет",    "slug": "bereket",   "floors": 1 },
+      "properties": { "slug": "bolashak",  "name": "Болашак",   "capacity": 150, "side": "south", "specialty": "Инструмент" },
       "geometry": { "type": "Polygon", "coordinates": [[
-        [76.9180, 43.3432], [76.9198, 43.3432], [76.9198, 43.3443], [76.9180, 43.3443], [76.9180, 43.3432]
+        [76.9124, 43.3424], [76.9152, 43.3424], [76.9152, 43.3440], [76.9124, 43.3440], [76.9124, 43.3424]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "slug": "aina-sulu", "name": "Айна-Сулу", "capacity": 80,  "side": "south", "specialty": "Свет и электрика" },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9156, 43.3426], [76.9176, 43.3426], [76.9176, 43.3437], [76.9156, 43.3437], [76.9156, 43.3426]
+      ]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "slug": "bereket",   "name": "Берекет",   "capacity": 100, "side": "south", "specialty": "Посуда и дом" },
+      "geometry": { "type": "Polygon", "coordinates": [[
+        [76.9180, 43.3425], [76.9202, 43.3425], [76.9202, 43.3438], [76.9180, 43.3438], [76.9180, 43.3425]
       ]] }
     }
   ]
