@@ -176,6 +176,7 @@ async function main() {
     full_name: 'Демо-продавец',
     phone: '+7 777 000 0000',
     is_verified: true,
+    is_admin: true,
     rating: 4.8,
   });
 

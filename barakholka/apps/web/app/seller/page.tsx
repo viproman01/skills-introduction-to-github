@@ -1,13 +1,19 @@
 import Link from 'next/link';
 import { requireSeller } from '@/lib/auth';
 import { getSupabaseServer } from '@/lib/supabase/server';
+import { RatingStars } from '@/components/rating-stars';
+
+type ReviewAgg = { shop_id: string; rating: number };
 
 export default async function SellerDashboard() {
   const seller = await requireSeller();
   const supabase = await getSupabaseServer();
 
-  const [shopsRes, productsRes, leadsRes, newLeadsRes] = await Promise.all([
-    supabase.from('shop').select('id', { count: 'exact', head: true }).eq('seller_id', seller.userId),
+  // Fetch seller's shop ids first so we can aggregate reviews by them.
+  const { data: shopRows } = await supabase.from('shop').select('id').eq('seller_id', seller.userId);
+  const shopIds = ((shopRows ?? []) as { id: string }[]).map((r) => r.id);
+
+  const [productsRes, leadsRes, newLeadsRes, reviewsRes] = await Promise.all([
     supabase
       .from('product')
       .select('id, shop!inner(seller_id)', { count: 'exact', head: true })
@@ -21,12 +27,19 @@ export default async function SellerDashboard() {
       .select('id, product!inner(shop!inner(seller_id))', { count: 'exact', head: true })
       .eq('product.shop.seller_id', seller.userId)
       .eq('status', 'new'),
+    shopIds.length > 0
+      ? supabase.from('review').select('shop_id, rating').in('shop_id', shopIds)
+      : Promise.resolve({ data: [] as ReviewAgg[] }),
   ]);
 
-  const shopsCount = shopsRes.count ?? 0;
+  const shopsCount = shopIds.length;
   const productsCount = productsRes.count ?? 0;
   const leadsCount = leadsRes.count ?? 0;
   const newLeadsCount = newLeadsRes.count ?? 0;
+
+  const reviews = (reviewsRes.data ?? []) as ReviewAgg[];
+  const reviewCount = reviews.length;
+  const avgRating = reviewCount > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviewCount : 0;
 
   const tiles = [
     { label: 'Бутиков',         value: shopsCount,    href: '/seller/shops',    cta: shopsCount === 0 ? '+ Открыть первый' : 'Управлять' },
@@ -58,6 +71,21 @@ export default async function SellerDashboard() {
         ))}
       </div>
 
+      {reviewCount > 0 && (
+        <section className="rounded-xl border border-neutral-200 bg-white p-5">
+          <div className="flex items-baseline gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-neutral-500">Репутация</div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <RatingStars value={avgRating} size={18} />
+                <span className="text-2xl font-bold tabular-nums">{avgRating.toFixed(1)}</span>
+                <span className="text-sm text-neutral-500">· {reviewCount} {plural(reviewCount, 'отзыв', 'отзыва', 'отзывов')}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="rounded-xl border border-neutral-200 bg-white p-5">
         <h2 className="text-base font-semibold">С чего начать</h2>
         <ol className="mt-3 flex flex-col gap-2 text-sm text-neutral-700">
@@ -87,4 +115,12 @@ function Step({ done, children }: { done: boolean; children: React.ReactNode }) 
       <span className={done ? 'text-neutral-400 line-through' : ''}>{children}</span>
     </li>
   );
+}
+
+function plural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
 }

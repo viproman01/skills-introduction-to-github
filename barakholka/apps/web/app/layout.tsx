@@ -10,7 +10,7 @@ import {
   SearchIcon,
   UserIcon,
 } from '@/components/icons';
-import { getSellerSession } from '@/lib/auth';
+import { getSellerSession, isAdmin } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'Барахолка — маркетплейс базара Алматы',
@@ -29,6 +29,7 @@ const categories = [
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getSellerSession();
+  const admin = session ? await isAdmin() : false;
 
   return (
     <html lang="ru">
@@ -68,6 +69,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </form>
 
             <nav className="hidden shrink-0 items-center gap-1 md:flex">
+              {admin && (
+                <Link
+                  href="/admin"
+                  className="mr-1 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-700"
+                >
+                  🛡️ Админка
+                </Link>
+              )}
               <Link
                 href="/seller"
                 className="mr-1 rounded-lg border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-soft"

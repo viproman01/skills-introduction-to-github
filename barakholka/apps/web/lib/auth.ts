@@ -54,6 +54,32 @@ export async function getCurrentUser(): Promise<{ id: string; email: string | nu
   return { id: user.id, email: user.email ?? null };
 }
 
+/** True if the signed-in user has seller.is_admin = true. */
+export async function isAdmin(): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  try {
+    const supabase = await getSupabaseServer();
+    const { data } = await supabase
+      .from('seller')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+    return Boolean((data as { is_admin?: boolean } | null)?.is_admin);
+  } catch {
+    return false;
+  }
+}
+
+/** Gate an /admin/* page: redirects unsigned users to /login, signed non-admins to /. */
+export async function requireAdmin(nextPath = '/admin'): Promise<{ userId: string; email: string | null }> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  const admin = await isAdmin();
+  if (!admin) redirect('/');
+  return { userId: user.id, email: user.email };
+}
+
 /** Like requireSeller but returns null instead of redirecting — for optional-auth pages. */
 export async function getSellerSession(): Promise<SellerSession | null> {
   const supabase = await getSupabaseServer();
