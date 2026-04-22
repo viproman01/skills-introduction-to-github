@@ -1,9 +1,12 @@
 import { getSupabaseServer } from '@/lib/supabase/server';
+import { resolveMarket } from '@/lib/market';
 import { BazaarWorkspace } from '@/components/bazaar/bazaar-workspace';
-import { ROW_DEFS } from '@/components/bazaar/types';
+import { rowDefsFromZones, ROW_DEFS, ROW_CAPACITY } from '@/components/bazaar/types';
 import type { ShopGeo } from '@/lib/types';
 
 export const metadata = { title: 'План базара — Барахолка.kz' };
+
+type SearchParams = Promise<{ market?: string }>;
 
 type ShopRow = {
   id: string;
@@ -14,19 +17,54 @@ type ShopRow = {
   sector: { code: string; zone: { name: string; slug: string } } | null;
 };
 
-export default async function MapPage() {
-  let shops = await fetchShops();
-  if (shops.length === 0) shops = fabricateMockShops();
-  return <BazaarWorkspace shops={shops} />;
+type ZoneRow = { slug: string; name: string };
+
+export default async function MapPage({ searchParams }: { searchParams: SearchParams }) {
+  const { market: marketSlugParam } = await searchParams;
+  const market = await resolveMarket(marketSlugParam);
+
+  const [zones, shops] = await Promise.all([
+    market ? fetchZones(market.id) : Promise.resolve([] as ZoneRow[]),
+    market ? fetchShops(market.id) : Promise.resolve([] as ShopGeo[]),
+  ]);
+
+  // Live data → derive rows from zones; otherwise fall back to the 10 real
+  // pavilion defaults + fabricated shops so the UI still renders.
+  const rows = zones.length > 0 ? rowDefsFromZones(zones) : ROW_DEFS;
+  const resolvedShops = shops.length > 0 ? shops : fabricateMockShops(rows);
+
+  return (
+    <BazaarWorkspace
+      shops={resolvedShops}
+      rows={rows}
+      capacities={ROW_CAPACITY}
+      marketName={market?.name ?? 'Алматинская барахолка'}
+    />
+  );
 }
 
-async function fetchShops(): Promise<ShopGeo[]> {
+async function fetchZones(marketId: string): Promise<ZoneRow[]> {
+  try {
+    const supabase = await getSupabaseServer();
+    const { data } = await supabase
+      .from('zone')
+      .select('slug, name')
+      .eq('market_id', marketId)
+      .order('name');
+    return (data ?? []) as ZoneRow[];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchShops(marketId: string): Promise<ShopGeo[]> {
   try {
     const supabase = await getSupabaseServer();
     const { data } = await supabase
       .from('shop')
-      .select('id, name, coords, photos, is_verified, sector:sector(code, zone:zone(name, slug))')
+      .select('id, name, coords, photos, is_verified, sector:sector!inner(code, zone:zone!inner(name, slug, market_id))')
       .eq('is_active', true)
+      .eq('sector.zone.market_id', marketId)
       .limit(1000);
 
     const rows = (data ?? []) as unknown as ShopRow[];
@@ -46,8 +84,9 @@ async function fetchShops(): Promise<ShopGeo[]> {
   }
 }
 
-/** When the DB isn't seeded, render a believable bazaar out of fabricated rows. */
-function fabricateMockShops(): ShopGeo[] {
+/** When the DB isn't reachable or hasn't been seeded yet, fabricate a
+ *  believable bazaar out of the given rows so /map isn't empty. */
+function fabricateMockShops(rows: { slug: string; name: string; letter: string }[]): ShopGeo[] {
   const out: ShopGeo[] = [];
   const sampleNames = [
     'Всё для школы', 'Спорт и туризм', 'Хит сезона', 'Оптовый склад',
@@ -57,10 +96,10 @@ function fabricateMockShops(): ShopGeo[] {
     'Распродажа', 'Премиум', 'Эконом-класс', 'Товары Казахстана',
   ];
   const countByRow: Record<string, number> = {
-    adem: 38, olzha: 24, almaly: 18, merkur: 28,
-    kulanda: 14, bolashak: 20, 'aina-sulu': 12, bereket: 30,
+    adem: 38, alatau: 32, yalyan: 44, olzha: 24, bolashak: 22,
+    almaly: 28, merkur: 20, kulanda: 14, 'aina-sulu': 12, bereket: 18,
   };
-  for (const def of ROW_DEFS) {
+  for (const def of rows) {
     const count = countByRow[def.slug] ?? 20;
     for (let i = 0; i < count; i++) {
       const id = `${def.slug}-${i.toString().padStart(3, '0')}`;

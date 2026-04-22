@@ -7,10 +7,31 @@ import { BazaarSidebar } from './bazaar-sidebar';
 import { BazaarSellerPanel } from './bazaar-seller-panel';
 import { BazaarStatsBar } from './bazaar-stats-bar';
 import { BazaarTabs } from './bazaar-tabs';
-import { DEFAULT_FILTERS, enrich, matchesFilters, type Container, type Filters } from './types';
+import {
+  DEFAULT_FILTERS,
+  ROW_CAPACITY,
+  ROW_DEFS,
+  enrich,
+  matchesFilters,
+  type Container,
+  type Filters,
+  type RowDef,
+} from './types';
 
-export function BazaarWorkspace({ shops }: { shops: ShopGeo[] }) {
-  const containers: Container[] = useMemo(() => shops.map(enrich), [shops]);
+export type BazaarWorkspaceProps = {
+  shops: ShopGeo[];
+  rows?: RowDef[];
+  capacities?: Record<string, number>;
+  marketName?: string;
+};
+
+export function BazaarWorkspace({
+  shops,
+  rows = ROW_DEFS,
+  capacities = ROW_CAPACITY,
+  marketName = 'Барахолка',
+}: BazaarWorkspaceProps) {
+  const containers: Container[] = useMemo(() => shops.map((s) => enrich(s, rows)), [shops, rows]);
 
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -41,6 +62,8 @@ export function BazaarWorkspace({ shops }: { shops: ShopGeo[] }) {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[260px_1fr_380px]">
         <BazaarSidebar
+          rows={rows}
+          capacities={capacities}
           containers={containers}
           selectedRow={selectedRow}
           onRowClick={(s) => { setSelectedRow(s); setSelectedId(null); }}
@@ -53,7 +76,7 @@ export function BazaarWorkspace({ shops }: { shops: ShopGeo[] }) {
           <header className="flex flex-wrap items-start justify-between gap-3 px-5 pb-3 pt-4">
             <div>
               <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-bazaar-muted">
-                <span>План Барахолки</span>
+                <span>План · {marketName}</span>
                 <span className="flex items-center gap-1 rounded-full bg-bazaar-live/15 px-2 py-0.5 text-[10px] font-bold text-bazaar-live">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-bazaar-live opacity-75" />
@@ -81,6 +104,8 @@ export function BazaarWorkspace({ shops }: { shops: ShopGeo[] }) {
 
           <div className="flex-1 px-5">
             <BazaarPlan
+              rows={rows}
+              capacities={capacities}
               containers={filtered}
               selectedRow={selectedRow}
               selectedContainerId={selectedId}

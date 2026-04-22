@@ -45,9 +45,12 @@ export default async function EditShopPage({ params, searchParams }: { params: P
           ← к списку
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">{shop.name}</h1>
-        <div className="mt-1 flex gap-4 text-sm text-neutral-500">
+        <div className="mt-1 flex flex-wrap gap-4 text-sm text-neutral-500">
           <Link href={`/seller/products?shop=${shop.id}`} className="hover:text-brand">
             Товары этого бутика →
+          </Link>
+          <Link href={`/seller/shops/${shop.id}/sections`} className="hover:text-brand">
+            Разделы →
           </Link>
           <Link href={`/shop/${shop.id}`} target="_blank" className="hover:text-brand">
             Открыть публичную страницу ↗

@@ -1,11 +1,19 @@
 import Link from 'next/link';
 import { getSupabaseServer } from '@/lib/supabase/server';
+import { resolveMarket } from '@/lib/market';
 import { ShopCard } from '@/components/shop-card';
 import { ProductCard } from '@/components/product-card';
 import type { ProductCardData, ShopSummary } from '@/lib/types';
 
-export default async function HomePage() {
-  const [popularShops, recommended] = await Promise.all([fetchPopularShops(), fetchRecommended()]);
+type SearchParams = Promise<{ market?: string }>;
+
+export default async function HomePage({ searchParams }: { searchParams: SearchParams }) {
+  const { market: marketSlugParam } = await searchParams;
+  const market = await resolveMarket(marketSlugParam);
+  const [popularShops, recommended] = await Promise.all([
+    fetchPopularShops(market?.id),
+    fetchRecommended(market?.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -122,15 +130,20 @@ function EmptyState({ text }: { text: string }) {
   );
 }
 
-async function fetchPopularShops(): Promise<ShopSummary[]> {
+async function fetchPopularShops(marketId?: string): Promise<ShopSummary[]> {
   try {
     const supabase = await getSupabaseServer();
-    const { data } = await supabase
+    let q = supabase
       .from('shop')
-      .select('id, name, row_number, place_number, photos, is_verified, sector:sector(code, floor, zone:zone(name, slug))')
+      .select(
+        'id, name, row_number, place_number, photos, is_verified,' +
+          ' sector:sector!inner(code, floor, zone:zone!inner(name, slug, market_id))',
+      )
       .eq('is_active', true)
       .order('is_verified', { ascending: false })
       .limit(8);
+    if (marketId) q = q.eq('sector.zone.market_id', marketId);
+    const { data } = await q;
     return (data ?? []) as unknown as ShopSummary[];
   } catch {
     return [];
@@ -146,15 +159,20 @@ type Row = {
   shop: { id: string; name: string } | null;
 };
 
-async function fetchRecommended(): Promise<ProductCardData[]> {
+async function fetchRecommended(marketId?: string): Promise<ProductCardData[]> {
   try {
     const supabase = await getSupabaseServer();
-    const { data } = await supabase
+    let q = supabase
       .from('product')
-      .select('id, title, price_kzt, condition, media:product_media(url, order_idx), shop:shop(id, name)')
+      .select(
+        'id, title, price_kzt, condition, media:product_media(url, order_idx),' +
+          ' shop:shop!inner(id, name, sector:sector!inner(zone:zone!inner(market_id)))',
+      )
       .eq('is_available', true)
       .order('created_at', { ascending: false })
       .limit(10);
+    if (marketId) q = q.eq('shop.sector.zone.market_id', marketId);
+    const { data } = await q;
 
     return ((data ?? []) as unknown as Row[]).map((r) => {
       const firstMedia = [...(r.media ?? [])].sort((a, b) => a.order_idx - b.order_idx)[0];

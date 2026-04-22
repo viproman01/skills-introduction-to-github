@@ -16,44 +16,73 @@ type ShopDetail = {
   sector: { code: string; floor: number; zone: { name: string } } | null;
 };
 
+type SectionRef = { id: string; name: string; slug: string; order_idx: number };
+
+type ProductRow = {
+  id: string;
+  title: string;
+  price_kzt: number;
+  condition: 'new' | 'used';
+  section_id: string | null;
+  media: { url: string; order_idx: number }[];
+};
+
 export default async function ShopPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await getSupabaseServer();
 
-  const [{ data: shopData }, { data: productsData }] = await Promise.all([
+  const [{ data: shopData }, { data: sectionsData }, { data: productsData }] = await Promise.all([
     supabase
       .from('shop')
       .select(
-        'id, name, description, row_number, place_number, photos, is_verified, hours, sector:sector(code, floor, zone:zone(name))',
+        'id, name, description, row_number, place_number, photos, is_verified, hours,' +
+          ' sector:sector(code, floor, zone:zone(name))',
       )
       .eq('id', id)
       .eq('is_active', true)
       .maybeSingle(),
     supabase
+      .from('shop_section')
+      .select('id, name, slug, order_idx')
+      .eq('shop_id', id)
+      .eq('is_visible', true)
+      .order('order_idx'),
+    supabase
       .from('product')
-      .select('id, title, price_kzt, condition, media:product_media(url, order_idx)')
+      .select('id, title, price_kzt, condition, section_id, media:product_media(url, order_idx)')
       .eq('shop_id', id)
       .eq('is_available', true)
       .order('created_at', { ascending: false })
-      .limit(48),
+      .limit(200),
   ]);
 
   if (!shopData) notFound();
   const shop = shopData as unknown as ShopDetail;
+  const sections = (sectionsData ?? []) as SectionRef[];
+  const rows = (productsData ?? []) as unknown as ProductRow[];
 
-  type Row = { id: string; title: string; price_kzt: number; condition: 'new' | 'used'; media: { url: string; order_idx: number }[] };
-  const products: ProductCardData[] = (productsData ?? []).map((p) => {
-    const row = p as unknown as Row;
-    const firstMedia = [...(row.media ?? [])].sort((a, b) => a.order_idx - b.order_idx)[0];
+  const toCard = (r: ProductRow): ProductCardData => {
+    const firstMedia = [...(r.media ?? [])].sort((a, b) => a.order_idx - b.order_idx)[0];
     return {
-      id: row.id,
-      title: row.title,
-      price_kzt: row.price_kzt,
-      condition: row.condition,
+      id: r.id,
+      title: r.title,
+      price_kzt: r.price_kzt,
+      condition: r.condition,
       photo: firstMedia?.url ?? null,
       shop: { id: shop.id, name: shop.name },
     };
-  });
+  };
+
+  const bySection = new Map<string, ProductRow[]>();
+  const unsectioned: ProductRow[] = [];
+  for (const r of rows) {
+    if (r.section_id) {
+      if (!bySection.has(r.section_id)) bySection.set(r.section_id, []);
+      bySection.get(r.section_id)!.push(r);
+    } else {
+      unsectioned.push(r);
+    }
+  }
 
   const location = shop.sector
     ? `${shop.sector.zone.name} · сектор ${shop.sector.code}${shop.sector.floor > 1 ? `, ${shop.sector.floor} эт.` : ''}`
@@ -93,26 +122,42 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
               Telegram
             </button>
           </div>
-          <p className="text-xs text-neutral-500">
-            Контакты продавца появятся после подключения seller-auth (следующая итерация).
-          </p>
         </div>
       </section>
 
-      <section>
-        <h2 className="mb-4 text-xl font-semibold">Товары</h2>
-        {products.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
-            У магазина пока нет товаров.
-          </div>
-        ) : (
+      {rows.length === 0 && (
+        <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
+          У бутика пока нет товаров.
+        </div>
+      )}
+
+      {sections.map((section) => {
+        const items = bySection.get(section.id) ?? [];
+        if (items.length === 0) return null;
+        return (
+          <section key={section.id} id={`section-${section.slug}`}>
+            <h2 className="mb-4 text-xl font-semibold">{section.name}</h2>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {items.map((p) => (
+                <ProductCard key={p.id} product={toCard(p)} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+
+      {unsectioned.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-xl font-semibold">
+            {sections.length > 0 ? 'Остальное' : 'Товары'}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {unsectioned.map((p) => (
+              <ProductCard key={p.id} product={toCard(p)} />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }

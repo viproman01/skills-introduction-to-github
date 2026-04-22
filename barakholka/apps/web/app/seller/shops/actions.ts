@@ -55,12 +55,16 @@ export async function createShop(formData: FormData) {
 }
 
 export async function updateShop(id: string, formData: FormData) {
-  await requireSeller(`/seller/shops/${id}`);
+  const seller = await requireSeller(`/seller/shops/${id}`);
   const payload = parseShopForm(formData);
   if (!payload.name) redirect(`/seller/shops/${id}?error=name`);
 
   const supabase = await getSupabaseServer();
-  const { error } = await supabase.from('shop').update(payload).eq('id', id);
+  const { error } = await supabase
+    .from('shop')
+    .update(payload)
+    .eq('id', id)
+    .eq('seller_id', seller.userId);
   if (error) redirect(`/seller/shops/${id}?error=${encodeURIComponent(error.message)}`);
 
   revalidatePath('/seller/shops');
@@ -69,9 +73,9 @@ export async function updateShop(id: string, formData: FormData) {
 }
 
 export async function deleteShop(id: string) {
-  await requireSeller();
+  const seller = await requireSeller();
   const supabase = await getSupabaseServer();
-  await supabase.from('shop').delete().eq('id', id);
+  await supabase.from('shop').delete().eq('id', id).eq('seller_id', seller.userId);
   revalidatePath('/seller/shops');
   redirect('/seller/shops');
 }

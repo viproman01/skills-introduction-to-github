@@ -8,6 +8,7 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 type ProductPayload = {
   shop_id: string;
   category_id: string | null;
+  section_id: string | null;
   title: string;
   description: string | null;
   price_kzt: number;
@@ -32,6 +33,7 @@ function parseProductForm(formData: FormData): { payload: ProductPayload; photos
   const payload: ProductPayload = {
     shop_id: String(formData.get('shop_id') ?? ''),
     category_id: nullable(formData.get('category_id')),
+    section_id: nullable(formData.get('section_id')),
     title: String(formData.get('title') ?? '').trim(),
     description: nullable(formData.get('description')),
     price_kzt: Math.max(0, Math.floor(Number(formData.get('price_kzt') ?? 0))),
@@ -78,11 +80,24 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(id: string, formData: FormData) {
-  await requireSeller(`/seller/products/${id}`);
+  const seller = await requireSeller(`/seller/products/${id}`);
   const { payload, photos } = parseProductForm(formData);
   if (!payload.title) redirect(`/seller/products/${id}?error=title`);
 
   const supabase = await getSupabaseServer();
+
+  // Verify the target product belongs to a shop owned by this seller.
+  const { data: existing } = await supabase
+    .from('product')
+    .select('id, shop:shop!inner(seller_id)')
+    .eq('id', id)
+    .maybeSingle();
+  type Ownership = { id: string; shop: { seller_id: string } | null };
+  const owned = existing as Ownership | null;
+  if (!owned || owned.shop?.seller_id !== seller.userId) {
+    redirect('/seller/products');
+  }
+
   const { error } = await supabase.from('product').update(payload).eq('id', id);
   if (error) redirect(`/seller/products/${id}?error=${encodeURIComponent(error.message)}`);
 
@@ -94,9 +109,20 @@ export async function updateProduct(id: string, formData: FormData) {
 }
 
 export async function deleteProduct(id: string) {
-  await requireSeller();
+  const seller = await requireSeller();
   const supabase = await getSupabaseServer();
-  await supabase.from('product').delete().eq('id', id);
+
+  const { data: existing } = await supabase
+    .from('product')
+    .select('id, shop:shop!inner(seller_id)')
+    .eq('id', id)
+    .maybeSingle();
+  type Ownership = { id: string; shop: { seller_id: string } | null };
+  const owned = existing as Ownership | null;
+  if (owned && owned.shop?.seller_id === seller.userId) {
+    await supabase.from('product').delete().eq('id', id);
+  }
+
   revalidatePath('/seller/products');
   redirect('/seller/products');
 }

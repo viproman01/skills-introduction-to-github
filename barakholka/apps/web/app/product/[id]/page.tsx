@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { Price } from '@/components/price';
+import { VariantPicker, type Variant } from '@/components/variant-picker';
 
 type ProductDetail = {
   id: string;
@@ -26,19 +27,27 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const supabase = await getSupabaseServer();
 
-  const { data } = await supabase
-    .from('product')
-    .select(
-      'id, title, description, price_kzt, condition, is_wholesale, min_wholesale_qty,' +
-        ' media:product_media(url, order_idx, type),' +
-        ' shop:shop(id, name, row_number, place_number, sector:sector(code, floor, zone:zone(name)))',
-    )
-    .eq('id', id)
-    .eq('is_available', true)
-    .maybeSingle();
+  const [{ data }, { data: variantData }] = await Promise.all([
+    supabase
+      .from('product')
+      .select(
+        'id, title, description, price_kzt, condition, is_wholesale, min_wholesale_qty,' +
+          ' media:product_media(url, order_idx, type),' +
+          ' shop:shop(id, name, row_number, place_number, sector:sector(code, floor, zone:zone(name)))',
+      )
+      .eq('id', id)
+      .eq('is_available', true)
+      .maybeSingle(),
+    supabase
+      .from('product_variant')
+      .select('id, size, color, price_kzt, stock_qty')
+      .eq('product_id', id)
+      .order('created_at'),
+  ]);
 
   if (!data) notFound();
   const product = data as unknown as ProductDetail;
+  const variants = (variantData ?? []) as Variant[];
 
   const photos = product.media.filter((m) => m.type === 'photo').sort((a, b) => a.order_idx - b.order_idx);
   const cover = photos[0]?.url ?? null;
@@ -71,7 +80,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <div>
           <h1 className="text-2xl font-semibold">{product.title}</h1>
           <div className="mt-2 flex items-center gap-2">
-            <Price value={product.price_kzt} className="text-2xl font-semibold" />
             {product.condition === 'used' && (
               <span className="rounded bg-neutral-900/80 px-2 py-0.5 text-xs text-white">б/у</span>
             )}
@@ -83,6 +91,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
+        {variants.length > 0 ? (
+          <VariantPicker variants={variants} basePrice={product.price_kzt} />
+        ) : (
+          <Price value={product.price_kzt} className="text-3xl font-bold" />
+        )}
+
         {product.description && <p className="whitespace-pre-wrap text-neutral-700">{product.description}</p>}
 
         {product.shop && (
@@ -90,7 +104,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             href={`/shop/${product.shop.id}`}
             className="flex flex-col gap-1 rounded-xl border border-neutral-200 p-4 transition hover:border-rose-300"
           >
-            <div className="text-xs uppercase tracking-wide text-neutral-500">Магазин</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-500">Бутик</div>
             <div className="font-medium">{product.shop.name}</div>
             {location && <div className="text-sm text-neutral-600">{location}</div>}
           </Link>

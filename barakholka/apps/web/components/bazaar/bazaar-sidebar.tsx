@@ -1,8 +1,10 @@
 'use client';
 
-import { ROW_CAPACITY, ROW_DEFS, type Container, type Filters } from './types';
+import type { Container, Filters, RowDef } from './types';
 
 export type BazaarSidebarProps = {
+  rows: RowDef[];
+  capacities: Record<string, number>;
   containers: Container[];
   selectedRow: string | null;
   onRowClick: (slug: string | null) => void;
@@ -12,6 +14,8 @@ export type BazaarSidebarProps = {
 };
 
 export function BazaarSidebar({
+  rows,
+  capacities,
   containers,
   selectedRow,
   onRowClick,
@@ -31,9 +35,9 @@ export function BazaarSidebar({
     <aside className="flex h-full w-full flex-col overflow-y-auto border-r border-bazaar-line bg-bazaar-card">
       <Section title="Ряды рынка">
         <ul className="flex flex-col gap-1">
-          {ROW_DEFS.map((row) => {
+          {rows.map((row) => {
             const count = counts[row.slug] ?? 0;
-            const total = ROW_CAPACITY[row.slug] ?? 24;
+            const total = capacities[row.slug] ?? 24;
             const active = selectedRow === row.slug;
             return (
               <li key={row.slug}>

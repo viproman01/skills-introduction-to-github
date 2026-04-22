@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ROW_CAPACITY, ROW_DEFS, type Container } from './types';
+import type { Container, RowDef } from './types';
 
 export type BazaarPlanProps = {
+  rows: RowDef[];
+  capacities: Record<string, number>;
   containers: Container[];
   selectedRow: string | null;
   selectedContainerId: string | null;
@@ -28,6 +30,8 @@ const SPECIAL_CELLS: Record<string, { at: number; kind: 'here' | 'store' | 'gate
 };
 
 export function BazaarPlan({
+  rows,
+  capacities,
   containers,
   selectedRow,
   selectedContainerId,
@@ -38,24 +42,23 @@ export function BazaarPlan({
 }: BazaarPlanProps) {
   const [zoom, setZoom] = useState(1);
 
-  // Assign each container to a slot within its row, deterministically by index.
-  const rows = useMemo(() => {
+  const layoutRows = useMemo(() => {
     const grouped = new Map<string, Container[]>();
-    for (const def of ROW_DEFS) grouped.set(def.slug, []);
+    for (const def of rows) grouped.set(def.slug, []);
     for (const c of containers) {
       if (grouped.has(c.rowSlug)) grouped.get(c.rowSlug)!.push(c);
     }
     for (const arr of grouped.values()) arr.sort((a, b) => a.id.localeCompare(b.id));
-    return ROW_DEFS.map((def) => ({
+    return rows.map((def) => ({
       def,
-      capacity: ROW_CAPACITY[def.slug] ?? 24,
+      capacity: capacities[def.slug] ?? 24,
       items: grouped.get(def.slug) ?? [],
     }));
-  }, [containers]);
+  }, [containers, rows, capacities]);
 
-  const maxCapacity = Math.max(...rows.map((r) => r.capacity));
+  const maxCapacity = Math.max(...layoutRows.map((r) => r.capacity), 1);
   const width = LABEL_W + maxCapacity * CELL_W + PAD_X * 2;
-  const height = PAD_Y * 2 + rows.length * (CELL_H + ROW_GAP) - ROW_GAP;
+  const height = PAD_Y * 2 + layoutRows.length * (CELL_H + ROW_GAP) - ROW_GAP;
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-bazaar-line bg-[#FCF6E4]">
@@ -88,7 +91,7 @@ export function BazaarPlan({
             shapeRendering="crispEdges"
             className="block"
           >
-            {rows.map((row, rowIdx) => {
+            {layoutRows.map((row, rowIdx) => {
               const y = PAD_Y + rowIdx * (CELL_H + ROW_GAP);
               const isRowSelected = selectedRow === row.def.slug;
               const rowDim = !!selectedRow && !isRowSelected;
