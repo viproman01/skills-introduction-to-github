@@ -1,7 +1,12 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { ProductCard } from '@/components/product-card';
+import { RatingStars } from '@/components/rating-stars';
+import { ReviewForm } from '@/components/review-form';
+import { submitReview } from './review-actions';
 import type { ProductCardData } from '@/lib/types';
 
 type ShopDetail = {
@@ -27,11 +32,27 @@ type ProductRow = {
   media: { url: string; order_idx: number }[];
 };
 
-export default async function ShopPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const supabase = await getSupabaseServer();
+type ReviewRow = {
+  id: string;
+  rating: number;
+  text: string | null;
+  created_at: string;
+  buyer_id: string;
+};
 
-  const [{ data: shopData }, { data: sectionsData }, { data: productsData }] = await Promise.all([
+export default async function ShopPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ review?: string }>;
+}) {
+  const { id } = await params;
+  const { review } = await searchParams;
+  const supabase = await getSupabaseServer();
+  const user = await getCurrentUser();
+
+  const [{ data: shopData }, { data: sectionsData }, { data: productsData }, { data: reviewsData }] = await Promise.all([
     supabase
       .from('shop')
       .select(
@@ -54,12 +75,26 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
       .eq('is_available', true)
       .order('created_at', { ascending: false })
       .limit(200),
+    supabase
+      .from('review')
+      .select('id, rating, text, created_at, buyer_id')
+      .eq('shop_id', id)
+      .order('created_at', { ascending: false })
+      .limit(20),
   ]);
 
   if (!shopData) notFound();
   const shop = shopData as unknown as ShopDetail;
   const sections = (sectionsData ?? []) as SectionRef[];
   const rows = (productsData ?? []) as unknown as ProductRow[];
+  const reviews = (reviewsData ?? []) as ReviewRow[];
+
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0;
+
+  const myReview = user ? reviews.find((r) => r.buyer_id === user.id) ?? null : null;
+  const boundSubmit = submitReview.bind(null, id);
 
   const toCard = (r: ProductRow): ProductCardData => {
     const firstMedia = [...(r.media ?? [])].sort((a, b) => a.order_idx - b.order_idx)[0];
@@ -106,6 +141,13 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
                 <span className="rounded-full bg-brand px-2 py-0.5 text-xs text-brand-fg">проверен</span>
               )}
             </div>
+            {reviews.length > 0 && (
+              <a href="#reviews" className="mt-1 inline-flex items-center gap-1.5 text-sm hover:underline">
+                <RatingStars value={avgRating} />
+                <span className="font-medium">{avgRating.toFixed(1)}</span>
+                <span className="text-neutral-500">· {reviews.length} отзывов</span>
+              </a>
+            )}
             <div className="mt-1 text-sm text-neutral-600">{location}</div>
             {(shop.row_number || shop.place_number) && (
               <div className="text-sm text-neutral-500">
@@ -158,6 +200,75 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
           </div>
         </section>
       )}
+
+      <section id="reviews" className="border-t border-neutral-200 pt-8">
+        <h2 className="mb-1 text-xl font-semibold">Отзывы</h2>
+        {reviews.length > 0 && (
+          <div className="mb-4 flex items-baseline gap-2">
+            <RatingStars value={avgRating} size={18} />
+            <span className="text-xl font-bold">{avgRating.toFixed(1)}</span>
+            <span className="text-sm text-neutral-500">· {reviews.length} {plural(reviews.length, 'отзыв', 'отзыва', 'отзывов')}</span>
+          </div>
+        )}
+
+        {review === 'ok' && (
+          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+            Спасибо за отзыв!
+          </div>
+        )}
+        {review === 'rating' && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            Укажите оценку от 1 до 5.
+          </div>
+        )}
+
+        {user ? (
+          <div className="mb-6">
+            <h3 className="mb-2 text-sm font-medium">
+              {myReview ? 'Ваш отзыв (можно обновить)' : 'Оставить отзыв'}
+            </h3>
+            <ReviewForm
+              action={boundSubmit}
+              initialRating={myReview?.rating ?? 0}
+              initialText={myReview?.text ?? ''}
+            />
+          </div>
+        ) : (
+          <div className="mb-6 rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-600">
+            <Link href={`/login?next=/shop/${shop.id}`} className="font-medium text-brand hover:underline">
+              Войдите
+            </Link>
+            , чтобы оставить отзыв.
+          </div>
+        )}
+
+        {reviews.length === 0 ? (
+          <p className="text-sm text-neutral-500">Пока нет отзывов. Будьте первым.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {reviews.map((r) => (
+              <li key={r.id} className="rounded-xl border border-neutral-200 bg-white p-4">
+                <div className="flex items-center gap-2 text-xs text-neutral-500">
+                  <RatingStars value={r.rating} size={12} />
+                  <span>{new Date(r.created_at).toLocaleDateString('ru-RU')}</span>
+                  {user?.id === r.buyer_id && (
+                    <span className="rounded bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">ваш</span>
+                  )}
+                </div>
+                {r.text && <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-800">{r.text}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
+}
+
+function plural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
 }

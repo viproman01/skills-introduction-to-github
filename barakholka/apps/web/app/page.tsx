@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { resolveMarket } from '@/lib/market';
+import { getFavoriteSet } from '@/lib/favorites';
 import { ShopCard } from '@/components/shop-card';
 import { ProductCard } from '@/components/product-card';
 import type { ProductCardData, ShopSummary } from '@/lib/types';
@@ -10,10 +11,12 @@ type SearchParams = Promise<{ market?: string }>;
 export default async function HomePage({ searchParams }: { searchParams: SearchParams }) {
   const { market: marketSlugParam } = await searchParams;
   const market = await resolveMarket(marketSlugParam);
-  const [popularShops, recommended] = await Promise.all([
+  const [popularShops, recommended, favs] = await Promise.all([
     fetchPopularShops(market?.id),
     fetchRecommended(market?.id),
+    getFavoriteSet(),
   ]);
+  const returnTo = market ? `/?market=${market.slug}` : '/';
 
   return (
     <div className="flex flex-col gap-8">
@@ -94,7 +97,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {recommended.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} isFavorite={favs.has(p.id)} returnTo={returnTo} />
             ))}
           </div>
         )}

@@ -42,6 +42,18 @@ export async function requireSeller(nextPath = '/seller'): Promise<SellerSession
   };
 }
 
+/**
+ * Returns the auth.users row for the current request, or null.
+ * Use for surfaces that need "signed in or not" (reviews, favorites) without
+ * the seller-row implication of requireSeller() / getSellerSession().
+ */
+export async function getCurrentUser(): Promise<{ id: string; email: string | null } | null> {
+  const supabase = await getSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  return { id: user.id, email: user.email ?? null };
+}
+
 /** Like requireSeller but returns null instead of redirecting — for optional-auth pages. */
 export async function getSellerSession(): Promise<SellerSession | null> {
   const supabase = await getSupabaseServer();

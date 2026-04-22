@@ -2,17 +2,30 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Price } from './price';
 import { HeartIcon } from './icons';
+import { FavoriteButton } from './favorite-button';
 import type { ProductCardData } from '@/lib/types';
 
-export function ProductCard({ product }: { product: ProductCardData }) {
+export type ProductCardProps = {
+  product: ProductCardData;
+  isFavorite?: boolean;
+  /** URL to redirect back to after toggling the favorite. If omitted, the
+   *  heart is a non-interactive visual affordance (e.g. anonymous grids). */
+  returnTo?: string;
+};
+
+export function ProductCard({ product, isFavorite = false, returnTo }: ProductCardProps) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl bg-white shadow-card transition hover:shadow-cardHover">
-      <button
-        aria-label="В избранное"
-        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-400 backdrop-blur transition hover:text-accent"
-      >
-        <HeartIcon size={18} />
-      </button>
+      {returnTo ? (
+        <FavoriteButton productId={product.id} isFavorite={isFavorite} returnTo={returnTo} />
+      ) : (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-400 backdrop-blur"
+        >
+          <HeartIcon size={18} />
+        </div>
+      )}
 
       <Link href={`/product/${product.id}`} className="flex flex-col">
         <div className="relative aspect-square w-full bg-neutral-100">
