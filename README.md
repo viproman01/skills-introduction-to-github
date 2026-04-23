@@ -1,75 +1,69 @@
-<header>
+# Barakholka
 
-<!--
-  <<< Author notes: Course header >>>
-  Include a 1280×640 image, course title in sentence case, and a concise description in emphasis.
-  In your repository settings: enable template repository, add your 1280×640 social image, auto delete head branches.
-  Add your open source license, GitHub uses MIT license.
--->
+Marketplace for the Almaty Barakholka bazaar. Next.js 15 (App Router) + Supabase + MapLibre.
 
-# Introduction to GitHub
+This iteration ships the **foundation + public site**: monorepo, DB schema, seed, landing, map, shops, shop detail, product detail, search. Seller dashboard, Telegram bot, admin, and Kaspi stubs come next session.
 
-_Get started using GitHub in less than an hour._
+## Requirements
 
-</header>
+- Node 20+, pnpm 9+
+- A Supabase Cloud project (URL + anon key + service role key)
+- Optional: [Supabase CLI](https://supabase.com/docs/guides/cli) for running migrations locally
 
-<!--
-  <<< Author notes: Step 1 >>>
-  Choose 3-5 steps for your course.
-  The first step is always the hardest, so pick something easy!
-  Link to docs.github.com for further explanations.
-  Encourage users to open new tabs for steps!
--->
+## Setup
 
-## Step 1: Create a branch
+```bash
+pnpm install
+cp .env.example .env.local   # fill in Supabase URL + keys
+```
 
-_Welcome to "Introduction to GitHub"! :wave:_
+Apply the schema to your Supabase project:
 
-**What is GitHub?**: GitHub is a collaboration platform that uses _[Git](https://docs.github.com/get-started/quickstart/github-glossary#git)_ for versioning. GitHub is a popular place to share and contribute to [open-source](https://docs.github.com/get-started/quickstart/github-glossary#open-source) software.
-<br>:tv: [Video: What is GitHub?](https://www.youtube.com/watch?v=pBy1zgt0XPc)
+```bash
+# Option A: copy-paste packages/db/migrations/0001_init.sql into the Supabase SQL editor
+# Option B: if you linked the CLI
+supabase db push
+```
 
-**What is a repository?**: A _[repository](https://docs.github.com/get-started/quickstart/github-glossary#repository)_ is a project containing files and folders. A repository tracks versions of files and folders. For more information, see "[About repositories](https://docs.github.com/en/repositories/creating-and-managing-repositories/about-repositories)" from GitHub Docs.
+Seed mock data (uses service role key from .env.local):
 
-**What is a branch?**: A _[branch](https://docs.github.com/en/get-started/quickstart/github-glossary#branch)_ is a parallel version of your repository. By default, your repository has one branch named `main` and it is considered to be the definitive branch. Creating additional branches allows you to copy the `main` branch of your repository and safely make any changes without disrupting the main project. Many people use branches to work on specific features without affecting any other parts of the project.
+```bash
+pnpm seed
+```
 
-Branches allow you to separate your work from the `main` branch. In other words, everyone's work is safe while you contribute. For more information, see "[About branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches)".
+Run the web app:
 
-**What is a profile README?**: A _[profile README](https://docs.github.com/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme)_ is essentially an "About me" section on your GitHub profile where you can share information about yourself with the community on GitHub.com. GitHub shows your profile README at the top of your profile page. For more information, see "[Managing your profile README](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme)".
+```bash
+pnpm dev
+# → http://localhost:3000
+```
 
-![profile-readme-example](/images/profile-readme-example.png)
+## Structure
 
-### :keyboard: Activity: Your first branch
+```
+apps/
+  web/        Next.js — public site (landing, map, catalog, product, search)
+packages/
+  db/         Migrations, seed, generated Supabase types
+supabase/     Supabase CLI config + migrations mirror
+```
 
-1. Open a new browser tab and navigate to your newly made repository. Then, work on the steps in your second tab while you read the instructions in this tab.
-2. Navigate to the **< > Code** tab in the header menu of your repository.
+## Deploy to Vercel
 
-   ![code-tab](/images/code-tab.png)
+The repo includes a `vercel.json` with the monorepo build wired up.
 
-3. Click on the **main** branch drop-down.
+1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new).
+2. Framework preset: **Next.js** (auto-detected).
+3. Leave Root Directory at the repo root — `vercel.json` handles the rest.
+4. Set environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_URL` (same)
+   - `SUPABASE_SERVICE_ROLE_KEY`
+5. Deploy.
 
-   ![main-branch-dropdown](/images/main-branch-dropdown.png)
+`pnpm turbo run build --filter=@barakholka/web` is the production build; it's been verified locally against Next.js 15.5.15.
 
-4. In the field, name your branch `my-first-branch`. In this case, the name must be `my-first-branch` to trigger the course workflow.
-5. Click **Create branch: my-first-branch** to create your branch.
+## Next iteration
 
-   ![create-branch-button](/images/create-branch-button.png)
-
-   The branch will automatically switch to the one you have just created.
-   The **main** branch drop-down bar will reflect your new branch and display the new branch name.
-
-6. Wait about 20 seconds then refresh this page (the one you're following instructions from). [GitHub Actions](https://docs.github.com/en/actions) will automatically update to the next step.
-
-<footer>
-
-<!--
-  <<< Author notes: Footer >>>
-  Add a link to get support, GitHub status page, code of conduct, license link.
--->
-
----
-
-Get help: [Post in our discussion board](https://github.com/orgs/skills/discussions/categories/introduction-to-github) &bull; [Review the GitHub status page](https://www.githubstatus.com/)
-
-&copy; 2024 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
-
-</footer>
+Seller dashboard (`/seller/*`), Telegram bot (`apps/bot`), admin (`/admin/*`), Kaspi QR stubs (`/api/kaspi/*`).
